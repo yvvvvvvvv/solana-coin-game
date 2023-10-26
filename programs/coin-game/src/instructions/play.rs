@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
-use rand::prelude::*;
+use anchor_spl::associated_token::AssociatedToken;
+use anchor_spl::token::{self, Mint, Token, TokenAccount, TransferChecked};
 
 use crate::state::*;
 use crate::errors::ErrorCode;
@@ -12,84 +13,61 @@ pub struct FlipIx {
 
 #[derive(Accounts)]
 #[instruction(ix: FlipIx)]
-pub struct InitCtx<'info> {
+pub struct FlipCtx<'info> {
     #[account(mut)]
-    authority: Signer<'info>,
+    pub player: Signer<'info>,
 
     #[account(
         init,
         seeds = [FLIP_PREFIX.as_bytes(), ix.identifier.as_ref()],
         bump,
-        payer = authority,
+        payer = player,
         space = FLIP_DEFAULT_SIZE
     )]
-    coin_flip_state: Box<Account<'info, CoinFlipState>>,
-    system_program: Program<'info, System>,
+    pub coin_flip_state: Box<Account<'info, CoinFlipState>>,
+
+    #[account(
+        init,
+        payer = player,
+        space = REWARD_DEFULT_SIZE, // 設定合適的大小
+        seeds = [REWARD_PREFIX.as_bytes(), ix.identifier.as_ref()],
+        bump,
+    )]
+    pub reward_distributor: Box<Account<'info, RewardDistributor>>,
+
+    pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<InitCtx>, ix: FlipIx) -> Result<()> {
+pub fn handler(ctx: Context<FlipCtx>, ix: FlipIx) -> Result<()> {
     // Check if the side is valid (true for heads, false for tails).
     if ix.side != 1 && ix.side != 2 {
         return Err(ErrorCode::InvalidSide.into());
     };
 
-    if ix.side == 1 {
-        println!("player choose head");
-    } else {
-        println!("player choose tail");
-    };
-
     // Generate a random number (for simplicity, you can use a more secure method in production).
     let random_number = anchor_lang::solana_program::sysvar::clock::Clock::get()?.unix_timestamp as u8;
 
-    // Determine the result (1 for heads, 2 for tails).
-    let win_or_lose = match random_number % 2 == ix.side - 1 {
-        true => String::from("WIN"),
-        false => String::from("LOSE"),
-    };
-
-    if random_number % 2 == 0 {
-        // println!("Result is head, user {}!!!🎉", win_or_lose);
-        ctx.accounts.coin_flip_state.game_result = 1;
-    } else {
-        // println!("Result is tail, user {}...😏", win_or_lose);
-        ctx.accounts.coin_flip_state.game_result = 2;
-    };
-
-
-
-
-
-
-
-
-
-
-
-    // if random_number % 2 == side - 1 {  // 0 for heads, 1 for tails
-    //     if side == 1 {
-    //         println!("The result is head, player WIN!!!")
-    //     } else {
-    //         println!("The result is tail, player WIN!!!")
-    //     }
+    // if random_number % 2 == 0 {
+    //     // println!("Result is head, user {}!!!🎉", win_or_lose);
+    //     ctx.accounts.coin_flip_state.game_result = 1;
     // } else {
-    //     if side == 1 {
-    //         println!("The result is head, player LOSE!!!")
-    //     } else {
-    //         println!("The result is tail, player LOSE!!!")
-    //     }
+    //     // println!("Result is tail, user {}...😏", win_or_lose);
+    //     ctx.accounts.coin_flip_state.game_result = 2;
     // };
 
-    // Return the result.
+    // Determine the result (1 for heads, 2 for tails).
+    let win_or_lose = random_number % 2 == ix.side - 1;
 
-    // let random_bool: bool = rand::random();
-    // println!("Random boolean value: {}", random_bool);
+    let mut reward_distributor = &mut ctx.accounts.reward_distributor;
+    let init_amount = reward_distributor.init_amount;
 
-    // if result == side {
-    //     println!("player choose {}, WIN!!!", side);
-    // } else {
-    //     println!("player choose {}, LOSE!!!", side);
-    // }
+    if win_or_lose {
+        reward_distributor.reward = reward_distributor.reward + (init_amount * 2);
+        ctx.accounts.coin_flip_state.game_result = true;
+    } else {
+        ctx.accounts.coin_flip_state.game_result = false;
+    }
+
     Ok(())
 }
 

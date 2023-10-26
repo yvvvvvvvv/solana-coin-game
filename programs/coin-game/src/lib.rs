@@ -11,7 +11,11 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod coin_game {
     use super::*;
 
-    pub fn play(ctx: Context<InitCtx>, ix: FlipIx) -> Result<()> {
+    pub fn init(ctx: Context<InitRewardDistributorCtx>, ix: Ix) -> Result<()> {
+        instructions::init_reward_distributor::handler(ctx, ix)
+    }
+
+    pub fn play(ctx: Context<FlipCtx>, ix: FlipIx) -> Result<()> {
         instructions::play::handler(ctx, ix)
     }
 }
