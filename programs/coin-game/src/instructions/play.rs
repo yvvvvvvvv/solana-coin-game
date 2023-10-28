@@ -1,6 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token::{self, Mint, Token, TokenAccount, TransferChecked};
 
 use crate::state::*;
 use crate::errors::ErrorCode;
@@ -27,11 +25,12 @@ pub struct FlipCtx<'info> {
     pub coin_flip_state: Box<Account<'info, CoinFlipState>>,
 
     #[account(
-        init,
-        payer = player,
-        space = REWARD_DEFULT_SIZE, // 設定合適的大小
-        seeds = [REWARD_PREFIX.as_bytes(), ix.identifier.as_ref()],
-        bump,
+        mut
+        // init,
+        // payer = player,
+        // space = REWARD_DEFULT_SIZE, // 設定合適的大小
+        // seeds = [REWARD_PREFIX.as_bytes(), ix.identifier.as_ref()],
+        // bump,
     )]
     pub reward_distributor: Box<Account<'info, RewardDistributor>>,
 
@@ -58,7 +57,7 @@ pub fn handler(ctx: Context<FlipCtx>, ix: FlipIx) -> Result<()> {
     // Determine the result (1 for heads, 2 for tails).
     let win_or_lose = random_number % 2 == ix.side - 1;
 
-    let mut reward_distributor = &mut ctx.accounts.reward_distributor;
+    let reward_distributor = &mut ctx.accounts.reward_distributor;
     let init_amount = reward_distributor.init_amount;
 
     if win_or_lose {
