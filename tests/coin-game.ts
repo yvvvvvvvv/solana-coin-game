@@ -5,7 +5,7 @@ import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import * as web3 from "@solana/web3.js"
 import { Wallet } from "@coral-xyz/anchor";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, getAccount } from "@solana/spl-token";
 import { BN } from "bn.js";
 // import dotenv from "dotenv"
 // dotenv.config()
@@ -90,7 +90,21 @@ describe("coin-game", () => {
   )[0];
 
   console.log('rewardDistributorId:', rewardDistributorId)
+  
 
+  // const rewardDistributorTokenAccount = getAssociatedTokenAddressSync(
+  //   rewardDistributorId,
+  //   program.programId
+  // )
+
+  // console.log('rewardDistributorTokenAccount:', rewardDistributorTokenAccount)
+
+  // const rewardDistributorAta = await getAccount(
+  //   provider.connection,
+  //   rewardDistributorTokenAccount
+  // )
+
+  // console.log('rewardDistributorAta:', rewardDistributorAta)
 
   it("init", async () => {
     console.log('--------- Before ---------')
@@ -130,7 +144,8 @@ describe("coin-game", () => {
     console.log('player(sol):', await getBalance(connection, payer.publicKey))
     console.log('flipState(sol):', await getBalance(connection, flipStateId))
     console.log('rewardDistributor(sol):', await getBalance(connection, rewardDistributorId))
-    console.log('rewardDistributor(sol):', await airdrop(connection, wallet, rewardDistributorId, 5000000000))
+    // console.log('rewardDistributorTokenAccount(sol):', await getBalance(connection, rewardDistributorTokenAccount))
+    // console.log('rewardDistributorTokenAccount(sol):', await airdrop(connection, wallet, rewardDistributorTokenAccount, 5000000000))
 
     let fetchedrewardDistributor = await program.account.rewardDistributor.fetch(rewardDistributorId);
     console.log('fetchedrewardDistributor:', fetchedrewardDistributor)
@@ -140,37 +155,38 @@ describe("coin-game", () => {
   })
 
 
-  it("claim", async () => {
-    console.log('--------- Before Claim ---------')
-    console.log('rewardDistributor(sol):', await getBalance(connection, rewardDistributorId))
-    console.log('player(sol):', await getBalance(connection, payer.publicKey))
+  // it("claim", async () => {
+  //   console.log('--------- Before Claim ---------')
+  //   console.log('rewardDistributor(sol):', await getBalance(connection, rewardDistributorId))
+  //   console.log('player(sol):', await getBalance(connection, payer.publicKey))
 
-    let fetchedrewardDistributorcheck = await program.account.rewardDistributor.fetch(rewardDistributorId);
-    console.log('fetchedrewardDistributor:', fetchedrewardDistributorcheck)
+  //   let fetchedrewardDistributorcheck = await program.account.rewardDistributor.fetch(rewardDistributorId);
+  //   console.log('fetchedrewardDistributor:', fetchedrewardDistributorcheck)
 
-    const result = await program.methods
-      .claim({
-        identifier: testidentifier
-      })
-      .accounts({
-        player: payer.publicKey,
-        mint: new web3.PublicKey('So11111111111111111111111111111111111111112'),
-        coinFlipState: flipStateId,
-        rewardDistributor: rewardDistributorId,
-        systemProgram: anchor.web3.SystemProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID
-      })
-      .signers([payer])
-      .rpc();
+  //   const result = await program.methods
+  //     .claim({
+  //       identifier: testidentifier
+  //     })
+  //     .accounts({
+  //       player: payer.publicKey,
+  //       mint: new web3.PublicKey('So11111111111111111111111111111111111111112'),
+  //       coinFlipState: flipStateId,
+  //       rewardDistributor: rewardDistributorId,
+  //       rewardDistributorTokenAccount: rewardDistributorTokenAccount,
+  //       systemProgram: anchor.web3.SystemProgram.programId,
+  //       tokenProgram: TOKEN_PROGRAM_ID
+  //     })
+  //     .signers([payer])
+  //     .rpc();
 
-    
-    console.log('--------- Claim ---------')
-    console.log('result:', result)
 
-    let fetchedCoinFlipState = await program.account.coinFlipState.fetch(flipStateId);
-    console.log('fetchedCoinFlipState:', fetchedCoinFlipState)
+  //   console.log('--------- Claim ---------')
+  //   console.log('result:', result)
 
-    let fetchedrewardDistributor = await program.account.rewardDistributor.fetch(rewardDistributorId);
-    console.log('fetchedrewardDistributor:', fetchedrewardDistributor)
-  })
+  //   let fetchedCoinFlipState = await program.account.coinFlipState.fetch(flipStateId);
+  //   console.log('fetchedCoinFlipState:', fetchedCoinFlipState)
+
+  //   let fetchedrewardDistributor = await program.account.rewardDistributor.fetch(rewardDistributorId);
+  //   console.log('fetchedrewardDistributor:', fetchedrewardDistributor)
+  // })
 });

@@ -4,5 +4,6 @@ use anchor_lang::prelude::*;
 pub enum ErrorCode {
     #[msg("Invalid side. Use 1 for heads, 2 for tails.")]
     InvalidSide,
-    InvalidClaimAmount
+    InvalidClaimAmount,
+    InvalidRewardDistributorTokenAccount
 }

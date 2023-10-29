@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token::{Mint, Token};
+use anchor_spl::token::{Mint, Token, TokenAccount};
 
 use crate::errors::ErrorCode;
 use crate::state::*;
@@ -37,6 +37,14 @@ pub struct ClaimCtx<'info> {
     )]
     pub reward_distributor: Box<Account<'info, RewardDistributor>>,
 
+    #[account(
+        mut, 
+        constraint = reward_distributor_token_account.owner == reward_distributor.key() 
+        // && 
+        // reward_distributor_token_account.mint == reward_distributor.reward_mint @ ErrorCode::InvalidRewardDistributorTokenAccount
+    )]
+    reward_distributor_token_account: Box<Account<'info, TokenAccount>>,
+
     pub system_program: Program<'info, System>,
     
     /// CHECK: This is not dangerous because we don't read or write from this account
@@ -45,8 +53,17 @@ pub struct ClaimCtx<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-pub fn handler(ctx: Context<ClaimCtx>, _ix: ClaimIx) -> Result<()> {
+pub fn handler(ctx: Context<ClaimCtx>, ix: ClaimIx) -> Result<()> {
     // let reward_distributor = &mut ctx.accounts.reward_distributor;
+
+    // let identifier_seed = ix.identifier.to_le_bytes();
+    // let reward_distributor_seed = &[
+    //     REWARD_DISTRIBUTOR_SEED.as_bytes(),
+    //     ctx.accounts.reward_distributor.coin_game.as_ref(),
+    //     identifier_seed.as_ref(),
+    //     &[ctx.accounts.reward_distributor.bump],
+    // ];
+    // let reward_distributor_signer = &[&reward_distributor_seed[..]];
 
     let mut lamports: u64 = ctx.accounts.reward_distributor.reward; //* 1_000_000_000; // 25 sol/ 25000 spl //1_000_000_000;//
     
@@ -56,16 +73,17 @@ pub fn handler(ctx: Context<ClaimCtx>, _ix: ClaimIx) -> Result<()> {
     lamports = lamports.checked_mul(1_000_000_000).unwrap();
     // sol transfer
     let ix = anchor_lang::solana_program::system_instruction::transfer(
-        &ctx.accounts.reward_distributor.key(),
+        &ctx.accounts.reward_distributor_token_account.key(),
         &ctx.accounts.player.key(),
         lamports,
     );
     anchor_lang::solana_program::program::invoke(
         &ix,
         &[
-            ctx.accounts.reward_distributor.to_account_info(),
+            ctx.accounts.reward_distributor_token_account.to_account_info(),
             ctx.accounts.player.to_account_info(),
-        ],
+        ]
+        // reward_distributor_signer
     )?;
 
     ctx.accounts.reward_distributor.reward = 0;
