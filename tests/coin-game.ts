@@ -94,7 +94,7 @@ describe("coin-game", () => {
 
   // const rewardDistributorTokenAccount = getAssociatedTokenAddressSync(
   //   rewardDistributorId,
-  //   program.programId
+  //   new web3.PublicKey('So11111111111111111111111111111111111111112')
   // )
 
   // console.log('rewardDistributorTokenAccount:', rewardDistributorTokenAccount)
